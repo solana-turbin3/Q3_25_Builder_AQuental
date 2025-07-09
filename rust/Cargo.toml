@@ -1,0 +1,10 @@
+[package]
+name = "rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bs58 = "0.5.1"
+solana-client = "2.2.1"
+solana-program = "2.2.1"
+solana-sdk = "2.2.1"
