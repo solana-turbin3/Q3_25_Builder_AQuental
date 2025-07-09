@@ -1,4 +1,4 @@
-# turbin3-prereq-ts
+# turbin3-prereq-ts <img src="../img/typescript.png" alt="logo" width="25"/>
 
 ```script
 nvm install --lts
