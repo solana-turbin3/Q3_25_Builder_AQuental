@@ -45,6 +45,9 @@ wallet: `Dn2ucNUVe5ptVueYRKf6m6effxs13RJpjJEMfEL9yMzG`
 - Prerequisite
   - [TypeScript pre req](./typescript/README.md)
   - [Rust pre req](./rust/README.md)
+- Capstone project
+  - [project](./capstone/REAME.md)
+  - [DRAFT: letter of intent](./capstone/LOI.md)
 - Week 1
   - [vault](./vault/README.md)
   - [escrow](./escrow/README.md)
