@@ -1,0 +1,13 @@
+{
+  "name": "gill",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "aquental",
+  "license": "MIT",
+  "dependencies": {
+    "gill": "^0.10.2"
+  },
+  "scripts": {
+    "init": "ts-node ./src/gill-nft.ts"
+  }
+}

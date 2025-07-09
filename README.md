@@ -29,7 +29,7 @@ Turbin3 builder cohort Q3 2025 - Antonio Quental
 
   ![setup](./img/setup-mucho.png)
 
-- Running a local test validator, and setting up all the configurations.
+- Running a [local test validator](https://solana.com/developers/guides/getstarted/solana-test-validator), and setting up all the configurations.
 - Understanding different solana clusters and how to use them.
 
 ```shell
@@ -46,4 +46,4 @@ wallet: `Dn2ucNUVe5ptVueYRKf6m6effxs13RJpjJEMfEL9yMzG`
   - [TypeScript pre req](./typescript/README.md)
   - [Rust pre req](./rust/README.md)
 - Week 1
-  - [vault]()
+  - [vault](./vault/README.md)
