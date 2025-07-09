@@ -47,3 +47,4 @@ wallet: `Dn2ucNUVe5ptVueYRKf6m6effxs13RJpjJEMfEL9yMzG`
   - [Rust pre req](./rust/README.md)
 - Week 1
   - [vault](./vault/README.md)
+  - [starter](./solana-starter/README.md)
