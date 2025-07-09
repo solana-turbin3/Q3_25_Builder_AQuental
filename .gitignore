@@ -137,3 +137,28 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+## Configuration
+/bootstrap.toml
+/config.toml
+/Makefile
+config.mk
+config.stamp
+no_llvm_build
+
+## Rust Build
+*/dl/
+*/doc/
+*/inst/
+*/llvm/
+*/mingw-build/
+*/build
+*/build-rust-analyzer/
+*/dist/
+*/unicode-downloads
+*/target/*
+*/target/debug
+*/library/target
+*/src/bootstrap/target
+*/src/ci/citool/target
+*/src/tools/x/target
