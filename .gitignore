@@ -158,7 +158,9 @@ no_llvm_build
 */unicode-downloads
 */target/*
 */target/debug
+escrow/anchor/target*
 */library/target
 */src/bootstrap/target
 */src/ci/citool/target
 */src/tools/x/target
+.DS_Store

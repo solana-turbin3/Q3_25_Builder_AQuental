@@ -8,7 +8,7 @@ An _escrow_ is a program that temporarily holds and controls funds or assets unt
 flowchart LR
     A[Initiate Escrow] --> B[Deposit Funds]
     B --> C[Conditions Defined]
-    C --> D{Are Conditions Met?}
+    C --> D{Check Conditions}
     D -->|Yes| E[Release Funds to Seller]
     D -->|No| F[Refund Buyer]
     E --> G[Transaction Complete]
@@ -17,32 +17,38 @@ flowchart LR
 
 ## actions
 
-1. Initiate Escrow
+- Initiate Escrow
+  - Buyer and seller agree to terms (e.g., NFT sale, token swap).
+  - A Solana smart contract (escrow program) is deployed or reused.
+- Deposit Funds
+  - Buyer sends funds (SOL/SPL tokens) to the escrow account.
+  - Funds are locked in the contract until conditions are fulfilled.
+- Conditions Defined
+  - The contract encodes release logic (e.g., NFT delivery confirmation, expiration time, or multisig approval).
+- Check Conditions
+  - The contract checks if the agreed-upon conditions (e.g., proof of delivery) are met.
+  - This can be triggered by:
+    - An on-chain event (e.g., NFT transfer).
+    - An off-chain oracle or signed message.
+- Release Funds or Refund
+  - Conditions Met (_Yes_): Funds are automatically sent to the seller.
+  - Conditions Not Met (_No_): Funds are returned to the buyer (e.g., if the seller fails to deliver).
+- Transaction Complete
+  - The escrow account closes, and both parties receive confirmation on-chain.
 
-- Buyer and seller agree to terms (e.g., NFT sale, token swap).
-- A Solana smart contract (escrow program) is deployed or reused.
+# tests
 
-2. Deposit Funds
+[Test description](./anchor/tests/README.md)
 
-- Buyer sends funds (SOL/SPL tokens) to the escrow account.
-- Funds are locked in the contract until conditions are fulfilled.
+```script
+# Run all tests
+anchor test
 
-3. Conditions Defined
+# Run specific test file
+anchor test --skip-deploy tests/anchor-escrow.ts
+anchor test --skip-deploy tests/escrow-edge-cases.ts
+anchor test --skip-deploy tests/escrow-security.ts
 
-- The contract encodes release logic (e.g., NFT delivery confirmation, expiration time, or multisig approval).
-
-4. Check Conditions
-
-- The contract checks if the agreed-upon conditions (e.g., proof of delivery) are met.
-- This can be triggered by:
-  - An on-chain event (e.g., NFT transfer).
-  - An off-chain oracle or signed message.
-
-5. Release Funds or Refund
-
-   - Conditions Met: Funds are automatically sent to the seller.
-   - Conditions Not Met: Funds are returned to the buyer (e.g., if the seller fails to deliver).
-
-6. Transaction Complete
-
-- The escrow account closes, and both parties receive confirmation on-chain.
+# Run individual test
+npx mocha tests/anchor-escrow.ts --grep "Successfully creates an escrow"
+```
