@@ -1,12 +1,14 @@
 [toolchain]
 package_manager = "pnpm"
+anchor_version = "0.31.0"
+
 
 [features]
 resolution = true
 skip-lint = false
 
 [programs.localnet]
-anchor_escrow = "8KiiqftKSSHTE1zF1XmtcWf1zvppaFf9C7z4mmA46p3H"
+anchor_escrow = "CDyUdDCvhe7ptHyNHDbuY6GDQdKYi1C4pEfJaWs4nfrU"
 
 [registry]
 url = "https://api.apr.dev"

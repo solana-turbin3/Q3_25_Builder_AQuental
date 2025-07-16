@@ -164,3 +164,4 @@ escrow/anchor/target*
 */src/ci/citool/target
 */src/tools/x/target
 .DS_Store
+escrow/anchor/test-ledger/*
