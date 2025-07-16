@@ -1,6 +1,6 @@
 # AMMs - Automated Market Maker
 
-An **Automated Market Maker (AMM)** is a decentralized protocol that enables trustless token swaps using liquidity pools (instead of traditional order books). It relies on mathematical formulas (e.g., the **Constant Product Formula** [wiki](https://en.wikipedia.org/wiki/Constant_function_market_maker)) to set prices algorithmically, allowing users to trade assets without needing a counterparty.
+An **Automated Market Maker (AMM)** is a decentralized protocol that enables trustless token swaps using liquidity pools (instead of traditional [order books](https://www.investopedia.com/terms/o/order-book.asp)). It relies on mathematical formulas (e.g., the **Constant Product Formula** [wiki](https://en.wikipedia.org/wiki/Constant_function_market_maker)) to set prices algorithmically, allowing users to trade assets without needing a counterparty.
 
 ---
 
