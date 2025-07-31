@@ -241,7 +241,7 @@ flowchart TD
         P3[Dispute Program]
         D{Dispute Occurs?}
         SPL[SPL Token Program]
-        CLK[Solana Clock / Pyth]
+        CLK[Solana Clock]
     end
 
     %% Flow Paths
@@ -364,7 +364,7 @@ This matrix details the cross-program calls and data flow between the core compo
 | Initiating Program         | Target Program/System  | Interaction Type | Data Transmitted                  | Control Flow                                                                |
 | -------------------------- | ---------------------- | ---------------- | --------------------------------- | --------------------------------------------------------------------------- |
 | **SprintVault Program** | SPL Token Program      | CPI              | `source`, `destination`, `amount` | Transfers tokens for deposits, withdrawals, and refunds.                    |
-| **SprintVault Program** | Solana Clock / Pyth    | Read             | `timestamp`                       | Reads the current time to calculate streamed amounts.                       |
+| **SprintVault Program** | Solana Clock        | Read             | `timestamp`                       | Reads the current time to calculate streamed amounts.                       |
 | **Bounty Program**         | SPL Token Program      | CPI              | `source`, `destination`, `amount` | Transfers tokens directly from bounty pool to contributor's wallet.         |
 | **Bounty Program**         | GitHub Oracle          | Listen           | `pr_id`, `merge_status`           | Listens for webhook events to validate that a pull request has been merged. |
 | **Dispute Program**        | SprintVault Program | CPI              | `sprint_pda`, `is_paused`         | Calls a handler on the SprintVault program to set its state to "paused." |
