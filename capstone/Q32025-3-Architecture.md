@@ -495,15 +495,6 @@ pub struct DepositToEscrow<'info> {
 }
 ```
 
-### Common Pitfalls Avoided
-
-This architecture successfully avoids common system design pitfalls:
-
-- **Overcrowding**: Information is separated into logical sections with dedicated diagrams for different concerns.
-- **Clear Labeling**: All connections are annotated with specific actions and a comprehensive legend is provided.
-- **Error Paths**: The architecture includes a dedicated **Dispute Program** and decision points for handling non-happy paths.
-- **Decision Points**: Diamond shapes in flowcharts explicitly model conditional logic.
-
 ---
 
 ## Conclusion
