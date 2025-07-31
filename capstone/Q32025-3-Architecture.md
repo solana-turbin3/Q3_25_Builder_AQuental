@@ -8,12 +8,12 @@ This document outlines the high-level architecture for the SprintVault protocol,
 
 The protocol is composed of three main on-chain programs and an external oracle integration, designed to be deployed on the Solana blockchain using the Anchor framework.
 
-1. **Sprint & Vault Program**: The core program responsible for creating and managing payment sprints, handling escrow deposits, and streaming payments to freelancers.
+1. **SprintVault Program**: The core program responsible for creating and managing payment sprints, handling escrow deposits, and streaming payments to freelancers.
 2. **Bounty Program**: Manages payments for open-source contributions, linking them to specific deliverables like GitHub Pull Requests.
 3. **Dispute Program**: A specialized program to handle payment pauses and dispute resolution, acting as an arbitration layer.
 4. **Oracle (GitHub Webhook)**: An external component that provides off-chain data (e.g., PR merge events) to trigger on-chain actions in the Bounty Program.
 
-### 1.1 Sprint & Vault Program
+### 1.1 SprintVault Program
 
 This is the central program that handles the core logic for scheduled, streaming payments.
 
@@ -80,7 +80,7 @@ graph TD
     end
 
     subgraph On-Chain Programs
-        P1[Sprint & Vault Program]
+        P1[SprintVault Program]
         P2[Bounty Program]
         P3[Dispute Program]
     end
@@ -117,7 +117,7 @@ graph TD
 
 1. **Happy Path (Freelancer Payroll)**:
 
-   - An **Employer (A)** calls `deposit_to_escrow()` on the **Sprint & Vault Program (P1)** to fund a sprint.
+   - An **Employer (A)** calls `deposit_to_escrow()` on the **SprintVault Program (P1)** to fund a sprint.
    - Funds are now locked in the vault.
    - The **Freelancer (B)** can call `withdraw_streamed()` at any time on **P1** to claim their real-time earnings.
 
@@ -129,7 +129,7 @@ graph TD
 
 3. **Dispute Flow**:
    - If there is an issue, the **Employer (A)** calls `pause_stream()` on the **Dispute Program (P3)**.
-   - **P3** then makes a CPI to the **Sprint & Vault Program (P1)** to pause the stream, preventing further withdrawals until the dispute is resolved by governance.
+   - **P3** then makes a CPI to the **SprintVault Program (P1)** to pause the stream, preventing further withdrawals until the dispute is resolved by governance.
 
 ---
 
@@ -148,12 +148,12 @@ graph TD
     end
 
     subgraph Programs
-        P1[Sprint & Vault Program]
+        P1[SprintVault Program]
         P2[Bounty Program]
     end
 
     subgraph PDAs & Accounts
-        PDA_S["Sprint PDA<br>Owner: Sprint & Vault Program<br>Data: freelancer, employer, start_time, end_time, is_paused<br>Seeds: sprint, employer_key, freelancer_key"]
+        PDA_S["Sprint PDA<br>Owner: SprintVault Program<br>Data: freelancer, employer, start_time, end_time, is_paused<br>Seeds: sprint, employer_key, freelancer_key"]
         PDA_B["Bounty PDA<br>Owner: Bounty Program<br>Data: contributor, pr_id, status<br>Seeds: bounty, pr_id"]
         TA_V["Vault Token Account<br>Owner: Sprint PDA<br>Type: TokenAccount<br>Mint: USDC"]
         TA_B["Bounty Token Account<br>Owner: Bounty PDA<br>Type: TokenAccount<br>Mint: USDC"]
@@ -193,11 +193,11 @@ graph TD
 
 ### Account Descriptions
 
-1. **Sprint PDA**: A Program-Derived Address owned by the **Sprint & Vault Program**. It holds the state of a specific payment sprint, including references to the employer and freelancer, timing information, and the current status.
+1. **Sprint PDA**: A Program-Derived Address owned by the **SprintVault Program**. It holds the state of a specific payment sprint, including references to the employer and freelancer, timing information, and the current status.
 
    - **Derivation**: It is derived using the seeds `["sprint", employer_key, freelancer_key]`, ensuring that each sprint between an employer and a freelancer has a unique, deterministic address.
 
-2. **Vault Token Account**: A standard SPL Token Account that holds the funds for a sprint (e.g., USDC). This account is owned by the **Sprint PDA**, meaning only the **Sprint & Vault Program** can authorize transactions from it. This is the core of the escrow mechanism.
+2. **Vault Token Account**: A standard SPL Token Account that holds the funds for a sprint (e.g., USDC). This account is owned by the **Sprint PDA**, meaning only the **SprintVault Program** can authorize transactions from it. This is the core of the escrow mechanism.
 
 3. **Bounty PDA**: A Program-Derived Address owned by the **Bounty Program**. It tracks the state of an open-source bounty, linking a specific pull request (`pr_id`) to a contributor's wallet.
 
@@ -236,7 +236,7 @@ flowchart TD
     end
 
     subgraph Solana On-Chain
-        P1[Sprint & Vault Program]
+        P1[SprintVault Program]
         P2[Bounty Program]
         P3[Dispute Program]
         D{Dispute Occurs?}
@@ -273,7 +273,7 @@ flowchart TD
 sequenceDiagram
     participant E as Employer
     participant F as Freelancer
-    participant SV as Sprint & Vault Program
+    participant SV as SprintVault Program
     participant VT as Vault Token Account (PDA)
     participant SPL as SPL Token Program
 
@@ -316,12 +316,12 @@ sequenceDiagram
 
 3. **Dispute Resolution Flow**:
 
-   - If a dispute arises, the system follows a clear path: a decision point (`Dispute Occurs?`) diverts the flow to the **Dispute Program**. This program acts as a modular arbitration layer, which can then interact with the core **Sprint & Vault Program** to pause or resolve the payment stream.
+   - If a dispute arises, the system follows a clear path: a decision point (`Dispute Occurs?`) diverts the flow to the **Dispute Program**. This program acts as a modular arbitration layer, which can then interact with the core **SprintVault Program** to pause or resolve the payment stream.
 
 4. **On-Chain Program Modularity**:
 
    - The architecture emphasizes a clear separation of concerns:
-     - **Sprint & Vault Program** handles the core payment and escrow logic.
+     - **SprintVault Program** handles the core payment and escrow logic.
      - **Bounty Program** manages task-based payments.
      - **Dispute Program** isolates complex arbitration logic.
    - This modularity allows for independent upgrades and maintenance.
@@ -329,7 +329,7 @@ sequenceDiagram
 5. **Token Interaction Sequence**:
    - The sequence diagram shows how the protocol leverages the Solana Programming Model:
      - The **Employer** initiates the process by calling the `deposit_to_escrow` function.
-     - The **Sprint & Vault Program** makes a Cross-Program Invocation (CPI) to the **SPL Token Program** to securely transfer funds into the **Vault Token Account** (owned by a PDA).
+     - The **SprintVault Program** makes a Cross-Program Invocation (CPI) to the **SPL Token Program** to securely transfer funds into the **Vault Token Account** (owned by a PDA).
      - When the **Freelancer** withdraws, the program again makes a CPI to the **SPL Token Program** to transfer the earned amount from the vault to the freelancer's wallet.
 
 ---
@@ -343,18 +343,18 @@ This section provides a granular look at the interactions between SprintVault's 
 #### Deposit Process
 
 1. **Initiation (Employer)**: The employer initiates the process by interacting with the frontend to define the sprint parameters (e.g., duration, freelancer, amount).
-2. **Transaction Construction (Backend)**: The backend API constructs a transaction that calls the `deposit_to_escrow` function on the **Sprint & Vault Program**.
+2. **Transaction Construction (Backend)**: The backend API constructs a transaction that calls the `deposit_to_escrow` function on the **SprintVault Program**.
 3. **On-Chain Execution**: The program creates a **Sprint PDA** to hold the sprint's state and a **Vault Token Account** (owned by the PDA) to escrow the funds. It then makes a CPI to the **SPL Token Program** to transfer funds from the employer's wallet to the newly created vault.
 
 #### Reward Claiming (Withdrawal)
 
 1. **Initiation (Freelancer)**: The freelancer clicks "Withdraw" on the frontend.
 2. **Transaction Construction**: The backend builds a transaction calling the `withdraw_streamed` function.
-3. **On-Chain Execution**: The **Sprint & Vault Program** calculates the currently earned amount based on the elapsed time and makes a CPI to the **SPL Token Program** to transfer the funds from the **Vault Token Account** to the freelancer's wallet.
+3. **On-Chain Execution**: The **SprintVault Program** calculates the currently earned amount based on the elapsed time and makes a CPI to the **SPL Token Program** to transfer the funds from the **Vault Token Account** to the freelancer's wallet.
 
 #### Staking and DeFi Integration (Future Scope)
 
-- **Staking**: A future enhancement could allow freelancers to stake their streamed earnings directly into a DeFi protocol (e.g., a lending pool) to earn yield. This would involve a CPI from the **Sprint & Vault Program** to the target DeFi protocol.
+- **Staking**: A future enhancement could allow freelancers to stake their streamed earnings directly into a DeFi protocol (e.g., a lending pool) to earn yield. This would involve a CPI from the **SprintVault Program** to the target DeFi protocol.
 - **Mechanism**: The `withdraw_streamed` function could be extended to include an optional `staking_pool_address` parameter.
 
 ### Program Interaction Matrix
@@ -363,11 +363,11 @@ This matrix details the cross-program calls and data flow between the core compo
 
 | Initiating Program         | Target Program/System  | Interaction Type | Data Transmitted                  | Control Flow                                                                |
 | -------------------------- | ---------------------- | ---------------- | --------------------------------- | --------------------------------------------------------------------------- |
-| **Sprint & Vault Program** | SPL Token Program      | CPI              | `source`, `destination`, `amount` | Transfers tokens for deposits, withdrawals, and refunds.                    |
-| **Sprint & Vault Program** | Solana Clock / Pyth    | Read             | `timestamp`                       | Reads the current time to calculate streamed amounts.                       |
+| **SprintVault Program** | SPL Token Program      | CPI              | `source`, `destination`, `amount` | Transfers tokens for deposits, withdrawals, and refunds.                    |
+| **SprintVault Program** | Solana Clock / Pyth    | Read             | `timestamp`                       | Reads the current time to calculate streamed amounts.                       |
 | **Bounty Program**         | SPL Token Program      | CPI              | `source`, `destination`, `amount` | Transfers tokens directly from bounty pool to contributor's wallet.         |
 | **Bounty Program**         | GitHub Oracle          | Listen           | `pr_id`, `merge_status`           | Listens for webhook events to validate that a pull request has been merged. |
-| **Dispute Program**        | Sprint & Vault Program | CPI              | `sprint_pda`, `is_paused`         | Calls a handler on the Sprint & Vault program to set its state to "paused." |
+| **Dispute Program**        | SprintVault Program | CPI              | `sprint_pda`, `is_paused`         | Calls a handler on the SprintVault program to set its state to "paused." |
 
 ### Account Management
 
@@ -378,11 +378,11 @@ This matrix details the cross-program calls and data flow between the core compo
 
 #### State Updates
 
-- The state of a sprint or bounty is managed within its respective PDA. For example, when a dispute is raised, the `pause_stream` function on the **Dispute Program** makes a CPI to the **Sprint & Vault Program** to update the `is_paused` flag in the **Sprint PDA** to `true`.
+- The state of a sprint or bounty is managed within its respective PDA. For example, when a dispute is raised, the `pause_stream` function on the **Dispute Program** makes a CPI to the **SprintVault Program** to update the `is_paused` flag in the **Sprint PDA** to `true`.
 
 #### Ownership Transfer
 
-- The core principle of the escrow system relies on ownership. The **Vault Token Account** is owned by the **Sprint PDA**. This ensures that only the **Sprint & Vault Program** can authorize transfers from the vault, providing a secure, non-custodial payment stream.
+- The core principle of the escrow system relies on ownership. The **Vault Token Account** is owned by the **Sprint PDA**. This ensures that only the **SprintVault Program** can authorize transfers from the vault, providing a secure, non-custodial payment stream.
 
 ### External Integrations
 
@@ -409,7 +409,7 @@ After analyzing the architecture against the user stories from `UserStory.md`, t
 
 #### Strengths:
 
-- **Clarity of Program Responsibilities**: The responsibilities are well-defined and logically separated between the `Sprint & Vault`, `Bounty`, and `Dispute` programs. This modularity is a strength of the architecture.
+- **Clarity of Program Responsibilities**: The responsibilities are well-defined and logically separated between the `SprintVault`, `Bounty`, and `Dispute` programs. This modularity is a strength of the architecture.
 - **Accuracy of Interactions**: The interactions shown in the diagrams accurately reflect the user stories. The core interactions (deposit to escrow, withdraw earnings, claim bounties) directly map to the critical user flows identified.
 - **Comprehensive Account Representation**: The account structure diagram comprehensively shows the PDAs, their owners, and their data structures. The use of color-coding and clear labeling enhances understanding.
 - **Clear External Dependency Visualization**: The flowchart provides clear visualization of both on-chain and off-chain dependencies, including the GitHub oracle and frontend/backend infrastructure.
