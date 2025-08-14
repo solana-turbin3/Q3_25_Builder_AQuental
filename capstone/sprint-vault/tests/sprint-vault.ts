@@ -10,7 +10,8 @@ import {
   getAccount,
 } from "@solana/spl-token";
 import { assert } from "chai";
-import { SprintDuration, AccelerationType, toDurationObject, toAccelerationObject } from "./helpers";
+import { SprintDuration, AccelerationType, durationToSeconds } from "./utils/test-helpers";
+import { toDurationObject, toAccelerationObject } from "./helpers";
 
 describe("sprint-vault", () => {
   // Configure the client to use the local cluster.
@@ -91,10 +92,11 @@ describe("sprint-vault", () => {
       10000000000 // 10,000 USDC (increased for security tests)
     );
     
-    // Calculate sprint times (start in 1 second, duration 10 seconds)
+    // Calculate sprint times
     const currentTime = Math.floor(Date.now() / 1000);
     startTime = new anchor.BN(currentTime + 1);
-    endTime = new anchor.BN(currentTime + 11);
+    const durationSeconds = durationToSeconds(sprintDuration);
+    endTime = new anchor.BN(currentTime + 1 + durationSeconds);
     
     // Derive PDAs
     [sprintPda, sprintBump] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -119,9 +121,9 @@ it("Creates a sprint", async () => {
         .createSprint(
           sprintId, 
           startTime, 
-          toDurationObject(sprintDuration), 
+          sprintDuration, 
           totalAmount,
-          toAccelerationObject(accelerationType)
+          accelerationType
         )
         .accounts({
           sprint: sprintPda,

@@ -684,7 +684,7 @@ describe("sprint-vault fuzzing", () => {
                     vault: vaultPda,
                     freelancerTokenAccount: env.freelancerTokenAccount,
                     freelancer: env.freelancer.publicKey,
-          mint: mint,
+                    mint: env.mint,
                     tokenProgram: TOKEN_PROGRAM_ID,
                   })
                   .signers([env.freelancer])
@@ -763,7 +763,13 @@ describe("sprint-vault fuzzing", () => {
             
             // Create and fund sprint
             await program.methods
-              .createSprint(new anchor.BN(sprintId), startTime, endTime, amount)
+              .createSprint(
+                new anchor.BN(sprintId), 
+                startTime, 
+                { oneWeek: {} }, // Use SprintDuration.OneWeek
+                amount,
+                { linear: {} } // Use AccelerationType.Linear
+              )
               .accounts({
                 sprint: sprintPda,
                 vault: vaultPda,
@@ -850,7 +856,7 @@ describe("sprint-vault fuzzing", () => {
                           vault: vaultPda,
                           freelancerTokenAccount: env.freelancerTokenAccount,
                           freelancer: env.freelancer.publicKey,
-          mint: mint,
+                          mint: env.mint,
                           tokenProgram: TOKEN_PROGRAM_ID,
                         })
                         .signers([env.freelancer])
@@ -969,7 +975,13 @@ describe("sprint-vault fuzzing", () => {
       
       // Create sprint
       await program.methods
-        .createSprint(new anchor.BN(sprintId), startTime, endTime, amount)
+        .createSprint(
+          new anchor.BN(sprintId), 
+          startTime, 
+          { oneWeek: {} }, // Use SprintDuration.OneWeek
+          amount,
+          { linear: {} } // Use AccelerationType.Linear
+        )
         .accounts({
           sprint: sprintPda,
           vault: vaultPda,
@@ -1008,7 +1020,7 @@ describe("sprint-vault fuzzing", () => {
               vault: vaultPda,
               freelancerTokenAccount: env.freelancerTokenAccount,
               freelancer: env.freelancer.publicKey,
-          mint: mint,
+              mint: env.mint,
               tokenProgram: TOKEN_PROGRAM_ID,
             })
             .signers([env.freelancer])
@@ -1156,7 +1168,13 @@ describe("sprint-vault fuzzing", () => {
       
       try {
         await program.methods
-          .createSprint(sprintId, startTime, endTime, amount)
+          .createSprint(
+            sprintId, 
+            startTime, 
+            { oneWeek: {} }, // Use SprintDuration.OneWeek
+            amount,
+            { linear: {} } // Use AccelerationType.Linear
+          )
           .accounts({
             sprint: sprintPda,
             vault: vaultPda,
@@ -1203,7 +1221,13 @@ describe("sprint-vault fuzzing", () => {
       
       // Create and fund
       await program.methods
-        .createSprint(new anchor.BN(sprintId), startTime, endTime, amount)
+        .createSprint(
+          new anchor.BN(sprintId), 
+          startTime, 
+          { oneWeek: {} }, // Use SprintDuration.OneWeek
+          amount,
+          { linear: {} } // Use AccelerationType.Linear
+        )
         .accounts({
           sprint: sprintPda,
           vault: vaultPda,
@@ -1239,7 +1263,7 @@ describe("sprint-vault fuzzing", () => {
               vault: vaultPda,
               freelancerTokenAccount: env.freelancerTokenAccount,
               freelancer: env.freelancer.publicKey,
-          mint: mint,
+              mint: env.mint,
               tokenProgram: TOKEN_PROGRAM_ID,
             })
             .signers([env.freelancer])

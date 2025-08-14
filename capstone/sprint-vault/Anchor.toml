@@ -6,7 +6,9 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
+bounty = "8qvnjVHuK27Wbzhe5HCuXybDLRN41t5LAZ9BgNKpiymh"
 sprint_vault = "2XMnUCRiLzaqt3Egt9mfUUo3T9bs6BBnrcE6AQavpx1f"
+vault = "5Q5YAzz8Hb2F37qQ3ztmyhEqCQyRswUagUPYJK6bWP4y"
 
 [registry]
 url = "https://api.apr.dev"
@@ -16,4 +18,4 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 'tests/**/*.ts' --exclude 'tests/utils/**'"
