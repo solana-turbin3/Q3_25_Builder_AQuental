@@ -10,6 +10,7 @@ import {
   getAccount,
 } from "@solana/spl-token";
 import { assert } from "chai";
+import { SprintDuration, AccelerationType, toDurationObject, toAccelerationObject } from "./helpers";
 
 describe("sprint-vault", () => {
   // Configure the client to use the local cluster.
@@ -25,11 +26,13 @@ describe("sprint-vault", () => {
   let employerTokenAccount: anchor.web3.PublicKey;
   let freelancerTokenAccount: anchor.web3.PublicKey;
   
-  // Sprint parameters
+// Sprint parameters
   const sprintId = new anchor.BN(1);
   const totalAmount = new anchor.BN(1000000000); // 1,000 USDC (6 decimals)
   let startTime: anchor.BN;
   let endTime: anchor.BN;
+  const sprintDuration = SprintDuration.OneWeek; // Using 1 week for tests
+  const accelerationType = AccelerationType.Quadratic; // Default to quadratic
   
   // PDAs
   let sprintPda: anchor.web3.PublicKey;
@@ -110,10 +113,16 @@ describe("sprint-vault", () => {
     });
   });
 
-  it("Creates a sprint", async () => {
+it("Creates a sprint", async () => {
     try {
       const tx = await program.methods
-        .createSprint(sprintId, startTime, endTime, totalAmount)
+        .createSprint(
+          sprintId, 
+          startTime, 
+          toDurationObject(sprintDuration), 
+          totalAmount,
+          toAccelerationObject(accelerationType)
+        )
         .accounts({
           sprint: sprintPda,
           vault: vaultPda,
@@ -379,13 +388,15 @@ describe("sprint-vault", () => {
       owner: invalidSprintPda,
     });
     
-    try {
+try {
+      // Try to create with invalid time range by swapping start and end times
       await program.methods
         .createSprint(
           invalidSprintId,
-          endTime, // End time as start time
-          startTime, // Start time as end time (invalid)
-          totalAmount
+          endTime, // Invalid: using end time as start
+          toDurationObject(sprintDuration), 
+          totalAmount,
+          toAccelerationObject(accelerationType)
         )
         .accounts({
           sprint: invalidSprintPda,
@@ -430,13 +441,14 @@ describe("sprint-vault", () => {
       const newStartTime = new anchor.BN(currentTime + 100);
       const newEndTime = new anchor.BN(currentTime + 200);
       
-      try {
+try {
         await program.methods
           .createSprint(
             zeroAmountSprintId,
             newStartTime,
-            newEndTime,
-            new anchor.BN(0) // Zero amount
+            toDurationObject(sprintDuration),
+            new anchor.BN(0), // Zero amount
+            toAccelerationObject(accelerationType)
           )
           .accounts({
             sprint: zeroAmountSprintPda,
@@ -483,13 +495,14 @@ describe("sprint-vault", () => {
       const largeAmount = new anchor.BN("9000000000000000000"); // 9 * 10^18
       
       try {
-        // First create the sprint with large amount
+// First create the sprint with large amount
         await program.methods
           .createSprint(
             overflowSprintId,
             overflowStartTime,
-            overflowEndTime,
-            largeAmount
+            toDurationObject(sprintDuration),
+            largeAmount,
+            toAccelerationObject(accelerationType)
           )
           .accounts({
             sprint: overflowSprintPda,
@@ -539,13 +552,14 @@ describe("sprint-vault", () => {
       const dwEndTime = new anchor.BN(currentTime + 5); // Ends in 5 seconds
       const dwAmount = new anchor.BN(100000000); // 100 USDC
       
-      // Create and fund the sprint
+// Create and fund the sprint
       await program.methods
         .createSprint(
           doubleWithdrawSprintId,
           dwStartTime,
-          dwEndTime,
-          dwAmount
+          toDurationObject(SprintDuration.OneWeek),
+          dwAmount,
+          toAccelerationObject(AccelerationType.Quadratic)
         )
         .accounts({
           sprint: doubleWithdrawSprintPda,
@@ -635,13 +649,14 @@ describe("sprint-vault", () => {
       const futureEndTime = new anchor.BN(currentTime + 7200); // Ends in 2 hours
       const futureAmount = new anchor.BN(100000000); // 100 USDC
       
-      // Create the sprint
+// Create the sprint
       await program.methods
         .createSprint(
           futureSprintId,
           futureStartTime,
-          futureEndTime,
-          futureAmount
+          toDurationObject(SprintDuration.OneWeek),
+          futureAmount,
+          toAccelerationObject(AccelerationType.Quadratic)
         )
         .accounts({
           sprint: futureSprintPda,
@@ -713,13 +728,14 @@ describe("sprint-vault", () => {
       const authEndTime = new anchor.BN(currentTime + 100);
       const authAmount = new anchor.BN(100000000);
       
-      // Create the sprint
+// Create the sprint
       await program.methods
         .createSprint(
           authSprintId,
           authStartTime,
-          authEndTime,
-          authAmount
+          toDurationObject(SprintDuration.OneWeek),
+          authAmount,
+          toAccelerationObject(AccelerationType.Quadratic)
         )
         .accounts({
           sprint: authSprintPda,
@@ -834,10 +850,16 @@ describe("sprint-vault", () => {
         owner: lifecycleSprintPda,
       });
       
-      // 1. Create sprint
+// 1. Create sprint
       console.log("\n  Step 1: Creating sprint...");
       await program.methods
-        .createSprint(lifecycleSprintId, lifecycleStartTime, lifecycleEndTime, lifecycleAmount)
+        .createSprint(
+          lifecycleSprintId, 
+          lifecycleStartTime, 
+          toDurationObject(SprintDuration.OneWeek), 
+          lifecycleAmount,
+          toAccelerationObject(AccelerationType.Quadratic)
+        )
         .accounts({
           sprint: lifecycleSprintPda,
           vault: lifecycleVaultPda,
@@ -1000,10 +1022,16 @@ describe("sprint-vault", () => {
         owner: disputeSprintPda,
       });
       
-      // 1. Create and fund sprint
+// 1. Create and fund sprint
       console.log("\n  Step 1: Creating and funding sprint...");
       await program.methods
-        .createSprint(disputeSprintId, disputeStartTime, disputeEndTime, disputeAmount)
+        .createSprint(
+          disputeSprintId, 
+          disputeStartTime, 
+          toDurationObject(SprintDuration.OneWeek), 
+          disputeAmount,
+          toAccelerationObject(AccelerationType.Quadratic)
+        )
         .accounts({
           sprint: disputeSprintPda,
           vault: disputeVaultPda,
@@ -1215,8 +1243,14 @@ describe("sprint-vault", () => {
         sprintPDAs.push(sprintPda);
         vaultPDAs.push(vaultPda);
         
-        await program.methods
-          .createSprint(sprint.id, sprint.startTime, sprint.endTime, sprint.amount)
+await program.methods
+          .createSprint(
+            sprint.id, 
+            sprint.startTime, 
+            toDurationObject(SprintDuration.OneWeek), 
+            sprint.amount,
+            toAccelerationObject(AccelerationType.Quadratic)
+          )
           .accounts({
             sprint: sprintPda,
             vault: vaultPda,

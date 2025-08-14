@@ -380,22 +380,6 @@ async function createAndFundSprint(
 
 ## Questions
 
-### Technical Questions
-
-1. **Token Support Scope**: Should the program support multiple token types simultaneously (USDC, SOL, etc.) or focus on a single token per sprint? The architecture mentions both USDC and SOL support.
-
-2. **Dispute Resolution Authority**: Who should have the authority to resume a paused sprint? Should this be:
-
-   - Only the employer (simple but potentially unfair)
-   - A designated arbitrator account (requires additional setup)
-   - A multisig or DAO governance (more complex but fairer)
-
-3. **Partial Funding**: Should sprints support partial funding where employers can add funds incrementally, or must the full amount be deposited upfront?
-
-4. **Sprint Modification**: Should active sprints support modifications (extend duration, increase amount) or should they be immutable once created?
-
-5. **Minimum Withdrawal Amount**: Should there be a minimum withdrawal amount to prevent dust attacks and excessive transaction fees?
-
 ### Business Logic Questions
 
 1. **Fee Structure**: Should the platform charge fees? If so:
@@ -536,6 +520,7 @@ Sprint Vault enables secure, time-streamed payments between employers and freela
 #### 1. Sprint Creation
 
 The employer initiates a new sprint by calling `create_sprint` with:
+
 - Freelancer's wallet address
 - Unique sprint ID
 - Start and end timestamps
@@ -546,6 +531,7 @@ The employer initiates a new sprint by calling `create_sprint` with:
 #### 2. Funding the Sprint
 
 The employer deposits the full payment amount into escrow:
+
 - Calls `deposit_to_escrow` instruction
 - Transfers tokens from employer's wallet to the sprint's vault account
 - Funds are now locked and will stream to the freelancer over time
@@ -553,6 +539,7 @@ The employer deposits the full payment amount into escrow:
 #### 3. Payment Streaming
 
 Once the sprint start time is reached:
+
 - Payments automatically become available based on elapsed time
 - The streaming follows the selected acceleration curve:
   - **Linear**: Constant rate over time
@@ -562,6 +549,7 @@ Once the sprint start time is reached:
 #### 4. Withdrawing Earned Payments
 
 The freelancer can withdraw accumulated payments at any time:
+
 - Calls `withdraw_streamed` instruction
 - System calculates earned amount based on:
   - Current time vs sprint timeline
@@ -572,6 +560,7 @@ The freelancer can withdraw accumulated payments at any time:
 #### 5. Handling Disputes (Optional)
 
 If issues arise, the employer can pause the sprint:
+
 - Calls `pause_stream` to temporarily halt payments
 - Streaming calculations account for paused duration
 - Call `resume_stream` to continue after resolution
@@ -579,6 +568,7 @@ If issues arise, the employer can pause the sprint:
 #### 6. Sprint Completion
 
 When the sprint ends:
+
 - Freelancer withdraws any remaining earned funds
 - Either party can call `close_sprint` to:
   - Refund any unearned funds to employer
@@ -596,21 +586,21 @@ sequenceDiagram
     participant T as Token Program
 
     Note over E,F: Sprint Setup Phase
-    
+
     E->>SV: create_sprint(freelancer, sprint_id, start_time, end_time, amount, acceleration_type)
     SV->>SV: Generate Sprint PDA
     SV->>SV: Initialize Sprint Account
     SV-->>E: Sprint Created
 
     Note over E,V: Funding Phase
-    
+
     E->>SV: deposit_to_escrow(sprint_id, amount)
     SV->>T: Transfer tokens from Employer
     T->>V: Tokens deposited to Vault
     SV-->>E: Deposit Successful
 
     Note over F,V: Payment Streaming Phase
-    
+
     loop Throughout Sprint Duration
         Note right of F: Time passes...
         F->>SV: withdraw_streamed(sprint_id)
@@ -626,15 +616,15 @@ sequenceDiagram
     end
 
     Note over E,F: Dispute Handling (Optional)
-    
+
     opt If Dispute Occurs
         E->>SV: pause_stream(sprint_id)
         SV->>SV: Set is_paused = true
         SV->>SV: Record pause_time
         SV-->>E: Sprint Paused
-        
+
         Note over E,F: Resolution period...
-        
+
         E->>SV: resume_stream(sprint_id)
         SV->>SV: Set is_paused = false
         SV->>SV: Update total_paused_duration
@@ -642,7 +632,7 @@ sequenceDiagram
     end
 
     Note over E,F: Sprint Completion
-    
+
     alt Sprint Ends Naturally
         F->>SV: withdraw_streamed(sprint_id)
         SV->>V: Transfer remaining earned funds
@@ -652,7 +642,7 @@ sequenceDiagram
         SV->>V: Calculate refund
         V->>E: Refund unearned funds
     end
-    
+
     SV->>SV: Close Sprint Account
     SV-->>E: Rent reclaimed
 ```
@@ -760,16 +750,19 @@ async function withdrawStreamed(
 ### Best Practices
 
 1. **Sprint Planning**:
+
    - Set realistic timelines with some buffer
    - Choose acceleration type based on work pattern
    - Consider smaller sprints for new relationships
 
 2. **For Employers**:
+
    - Fund sprints promptly after creation
    - Use pause feature judiciously for legitimate disputes
    - Close completed sprints to reclaim rent
 
 3. **For Freelancers**:
+
    - Withdraw regularly to maintain cash flow
    - Monitor sprint progress and deadlines
    - Communicate proactively to avoid disputes

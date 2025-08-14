@@ -166,3 +166,4 @@ no_llvm_build
 anchor_escrow/test-ledger/*
 anchor_escrow/.anchor/*
 anchor_escrow/anchor/target*
+_*.md

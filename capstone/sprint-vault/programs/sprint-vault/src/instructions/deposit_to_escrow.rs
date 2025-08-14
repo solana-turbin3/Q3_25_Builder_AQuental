@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use crate::state::Sprint;
 use crate::errors::SprintVaultError;
+use crate::utils::{get_current_time, validate_token_account_not_frozen};
 
 #[derive(Accounts)]
 pub struct DepositToEscrow<'info> {
@@ -27,19 +28,37 @@ pub struct DepositToEscrow<'info> {
 }
 
 pub fn handler(ctx: Context<DepositToEscrow>, amount: u64) -> Result<()> {
-    // Validate amount
-    if amount == 0 {
-        return Err(error!(SprintVaultError::InvalidAmount));
+    let sprint = &mut ctx.accounts.sprint;
+    let current_time = get_current_time()?;
+    
+    // Validate token accounts are not frozen
+    validate_token_account_not_frozen(&ctx.accounts.employer_token_account)?;
+    validate_token_account_not_frozen(&ctx.accounts.vault)?;
+    
+    // Check that the employer has sufficient balance
+    require!(
+        ctx.accounts.employer_token_account.amount >= sprint.total_amount,
+        SprintVaultError::InsufficientTokenBalance
+    );
+    
+    // Check if sprint is already funded
+    if sprint.is_funded {
+        return Err(error!(SprintVaultError::SprintAlreadyStarted));
     }
     
-    // Check if the amount matches the expected total
-    let sprint = &ctx.accounts.sprint;
+    // Check if sprint has already started
+    if current_time >= sprint.start_time {
+        return Err(error!(SprintVaultError::SprintAlreadyStarted));
+    }
+    
+    // Validate amount - must be exactly the total amount (full funding)
     if amount != sprint.total_amount {
         msg!(
-            "Warning: Depositing {} but sprint expects {}",
-            amount,
-            sprint.total_amount
+            "Must deposit exact amount. Expected: {}, Received: {}",
+            sprint.total_amount,
+            amount
         );
+        return Err(error!(SprintVaultError::InvalidAmount));
     }
     
     // Transfer tokens from employer to vault
@@ -54,10 +73,14 @@ pub fn handler(ctx: Context<DepositToEscrow>, amount: u64) -> Result<()> {
     
     token::transfer(cpi_ctx, amount)?;
     
+    // Mark sprint as fully funded
+    let sprint = &mut ctx.accounts.sprint;
+    sprint.is_funded = true;
+    
     msg!(
-        "Deposited {} tokens to sprint {} vault",
-        amount,
-        sprint.sprint_id
+        "Sprint {} fully funded with {} tokens",
+        sprint.sprint_id,
+        amount
     );
     
     Ok(())

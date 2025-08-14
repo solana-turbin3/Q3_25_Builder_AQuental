@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+mod constants;
 mod errors;
 mod instructions;
 mod state;
@@ -7,6 +8,7 @@ mod strategies;
 mod utils;
 
 use instructions::*;
+use state::SprintDuration;
 use strategies::AccelerationType;
 
 declare_id!("2XMnUCRiLzaqt3Egt9mfUUo3T9bs6BBnrcE6AQavpx1f");
@@ -16,16 +18,17 @@ pub mod sprint_vault {
     use super::*;
 
     /// Creates a new sprint with specified parameters
+    /// @param sprint_duration - Predefined sprint duration (1-12 weeks)
     /// @param acceleration_type - Optional payment acceleration (defaults to Quadratic)
     pub fn create_sprint(
         ctx: Context<CreateSprint>,
         sprint_id: u64,
         start_time: i64,
-        end_time: i64,
+        sprint_duration: SprintDuration,
         total_amount: u64,
         acceleration_type: Option<AccelerationType>,
     ) -> Result<()> {
-        instructions::create_sprint::handler(ctx, sprint_id, start_time, end_time, total_amount, acceleration_type)
+        instructions::create_sprint::handler(ctx, sprint_id, start_time, sprint_duration, total_amount, acceleration_type)
     }
 
     /// Deposits funds into the sprint vault
