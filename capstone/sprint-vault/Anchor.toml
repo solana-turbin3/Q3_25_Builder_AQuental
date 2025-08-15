@@ -5,6 +5,13 @@ package_manager = "yarn"
 resolution = true
 skip-lint = false
 
+[workspace]
+members = ["programs/*"]
+
+# Build configuration to handle stack issues
+[build]
+skip-lint = false
+
 [programs.localnet]
 bounty = "8qvnjVHuK27Wbzhe5HCuXybDLRN41t5LAZ9BgNKpiymh"
 sprint_vault = "2XMnUCRiLzaqt3Egt9mfUUo3T9bs6BBnrcE6AQavpx1f"

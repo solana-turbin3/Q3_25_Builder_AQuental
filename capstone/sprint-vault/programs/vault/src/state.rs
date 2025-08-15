@@ -51,8 +51,8 @@ impl EscrowVault {
         8 +                     // released_amount
         8 +                     // refunded_amount
         8 +                     // locked_amount
-        200 +                   // release_schedule (estimated)
-        33 +                    // release_authority (estimated)
+        1200 +                  // release_schedule (fixed size with MilestoneSet)
+        33 +                    // release_authority
         2 +                     // status
         8 +                     // created_at
         8 +                     // updated_at
@@ -130,7 +130,7 @@ impl EscrowVault {
             
             ReleaseSchedule::Milestone { conditions } => {
                 let mut total = 0u64;
-                for condition in conditions {
+                for condition in conditions.iter() {
                     if condition.is_completed {
                         total = total.checked_add(condition.amount)
                             .ok_or(VaultError::ArithmeticOverflow)?;
@@ -207,7 +207,7 @@ impl EscrowVault {
                 
                 // Calculate milestone portion
                 let mut milestone_available = 0u64;
-                for condition in milestone_config {
+                for condition in milestone_config.iter() {
                     if condition.is_completed {
                         milestone_available = milestone_available
                             .checked_add(condition.amount)
@@ -243,25 +243,100 @@ pub enum ReleaseSchedule {
         end: i64 
     },                                      // Time-based linear release
     Milestone { 
-        conditions: Vec<MilestoneCondition> 
+        conditions: MilestoneSet
     },                                      // Condition-based release
     Hybrid {
         linear_portion: u64,                // Amount for linear release
         milestone_portion: u64,              // Amount for milestone release
         linear_config: LinearConfig,
-        milestone_config: Vec<MilestoneCondition>,
+        milestone_config: MilestoneSet,
     },                                      // Combined linear + milestone
     Custom { 
-        data: Vec<u8> 
+        data: CustomData
     },                                      // For future extensions
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+// Wrapper type for milestone conditions to avoid stack issues
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
+pub struct MilestoneSet {
+    // Using fixed-size array with counter for efficiency
+    pub conditions: [MilestoneCondition; 5],  // Max 5 milestones (reduced for stack)
+    pub count: u8,                            // Actual number of milestones
+}
+
+impl MilestoneSet {
+    pub fn new() -> Self {
+        Self {
+            conditions: [MilestoneCondition::default(); 5],
+            count: 0,
+        }
+    }
+    
+    pub fn add(&mut self, condition: MilestoneCondition) -> Result<()> {
+        require!(
+            (self.count as usize) < 5,
+            VaultError::InvalidMilestoneConfig
+        );
+        self.conditions[self.count as usize] = condition;
+        self.count += 1;
+        Ok(())
+    }
+    
+    pub fn iter(&self) -> impl Iterator<Item = &MilestoneCondition> {
+        self.conditions[..self.count as usize].iter()
+    }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
 pub struct MilestoneCondition {
     pub milestone_id: u32,
     pub amount: u64,
     pub required_approval: Pubkey,
     pub is_completed: bool,
+}
+
+impl Default for MilestoneCondition {
+    fn default() -> Self {
+        Self {
+            milestone_id: 0,
+            amount: 0,
+            required_approval: Pubkey::default(),
+            is_completed: false,
+        }
+    }
+}
+
+// Wrapper for custom data to avoid stack issues
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct CustomData {
+    pub data: [u8; 256],  // Fixed size for custom data
+    pub len: u16,         // Actual length of data
+}
+
+impl Default for CustomData {
+    fn default() -> Self {
+        Self {
+            data: [0u8; 256],
+            len: 0,
+        }
+    }
+}
+
+impl CustomData {
+    pub fn new(data: &[u8]) -> Result<Self> {
+        require!(
+            data.len() <= 256,
+            VaultError::InvalidAmount
+        );
+        let mut custom_data = Self::default();
+        custom_data.data[..data.len()].copy_from_slice(data);
+        custom_data.len = data.len() as u16;
+        Ok(custom_data)
+    }
+    
+    pub fn as_slice(&self) -> &[u8] {
+        &self.data[..self.len as usize]
+    }
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]

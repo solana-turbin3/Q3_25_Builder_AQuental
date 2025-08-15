@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::associated_token::AssociatedToken;
 use crate::state::*;
 
 #[derive(Accounts)]
@@ -33,6 +34,7 @@ pub struct WithdrawAvailable<'info> {
     pub withdrawer_token_account: Account<'info, TokenAccount>,
     
     pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 pub fn handler(ctx: Context<WithdrawAvailable>, max_amount: Option<u64>) -> Result<()> {

@@ -33,47 +33,47 @@ pub fn handler(ctx: Context<ReleaseMilestone>, milestone_id: u32) -> Result<()> 
     
     match &mut escrow.release_schedule {
         ReleaseSchedule::Milestone { conditions } => {
-            for condition in conditions.iter_mut() {
-                if condition.milestone_id == milestone_id {
+            for i in 0..conditions.count as usize {
+                if conditions.conditions[i].milestone_id == milestone_id {
                     found = true;
                     
                     // Check if already completed
-                    if condition.is_completed {
+                    if conditions.conditions[i].is_completed {
                         already_completed = true;
                         break;
                     }
                     
                     // Verify authority
                     require!(
-                        ctx.accounts.authority.key() == condition.required_approval,
+                        ctx.accounts.authority.key() == conditions.conditions[i].required_approval,
                         VaultError::Unauthorized
                     );
                     
                     // Mark as completed
-                    condition.is_completed = true;
+                    conditions.conditions[i].is_completed = true;
                     break;
                 }
             }
         },
         ReleaseSchedule::Hybrid { milestone_config, .. } => {
-            for condition in milestone_config.iter_mut() {
-                if condition.milestone_id == milestone_id {
+            for i in 0..milestone_config.count as usize {
+                if milestone_config.conditions[i].milestone_id == milestone_id {
                     found = true;
                     
                     // Check if already completed
-                    if condition.is_completed {
+                    if milestone_config.conditions[i].is_completed {
                         already_completed = true;
                         break;
                     }
                     
                     // Verify authority
                     require!(
-                        ctx.accounts.authority.key() == condition.required_approval,
+                        ctx.accounts.authority.key() == milestone_config.conditions[i].required_approval,
                         VaultError::Unauthorized
                     );
                     
                     // Mark as completed
-                    condition.is_completed = true;
+                    milestone_config.conditions[i].is_completed = true;
                     break;
                 }
             }

@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer, CloseAccount};
+use anchor_spl::associated_token::AssociatedToken;
 use crate::state::*;
 
 #[derive(Accounts)]
@@ -37,6 +38,7 @@ pub struct CloseEscrow<'info> {
     pub depositor_token_account: Account<'info, TokenAccount>,
     
     pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 pub fn handler(ctx: Context<CloseEscrow>) -> Result<()> {

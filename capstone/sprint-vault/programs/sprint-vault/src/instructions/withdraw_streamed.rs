@@ -36,20 +36,27 @@ pub struct WithdrawStreamed<'info> {
 }
 
 pub fn handler(ctx: Context<WithdrawStreamed>) -> Result<()> {
-    let sprint = &mut ctx.accounts.sprint;
-    
-    // Basic validation
-    require!(sprint.is_funded, SprintVaultError::SprintNotFunded);
-    require!(!sprint.is_paused, SprintVaultError::SprintPaused);
-
+    // Extract account references to reduce stack usage
     let current_time = get_current_time()?;
-    require!(current_time >= sprint.start_time, SprintVaultError::SprintNotStarted);
-
-    // Calculate and withdraw
-    let withdrawable = sprint.calculate_withdrawable_amount(current_time)?;
+    let current_slot = Clock::get()?.slot;
+    
+    // Perform all validations and calculations
+    let withdrawable = {
+        let sprint = &ctx.accounts.sprint;
+        
+        // Basic validation
+        require!(sprint.is_funded, SprintVaultError::SprintNotFunded);
+        require!(!sprint.is_paused, SprintVaultError::SprintPaused);
+        require!(current_time >= sprint.start_time, SprintVaultError::SprintNotStarted);
+        
+        // Calculate withdrawable amount
+        sprint.calculate_withdrawable_amount(current_time)?
+    };
+    
     require!(withdrawable > 0, SprintVaultError::NoFundsAvailable);
 
-    // Transfer logic
+    // Prepare transfer
+    let sprint = &ctx.accounts.sprint;
     let sprint_id_bytes = sprint.sprint_id.to_le_bytes();
     let seeds = &[
         b"sprint",
@@ -59,18 +66,26 @@ pub fn handler(ctx: Context<WithdrawStreamed>) -> Result<()> {
     ];
     let signer = &[&seeds[..]];
 
-    let cpi_accounts = Transfer {
-        from: ctx.accounts.vault.to_account_info(),
-        to: ctx.accounts.freelancer_token_account.to_account_info(),
-        authority: sprint.to_account_info(),
-    };
-    let cpi_program = ctx.accounts.token_program.to_account_info();
-    let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
-    token::transfer(cpi_ctx, withdrawable)?;
+    // Execute transfer
+    token::transfer(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.vault.to_account_info(),
+                to: ctx.accounts.freelancer_token_account.to_account_info(),
+                authority: sprint.to_account_info(),
+            },
+            signer,
+        ),
+        withdrawable,
+    )?;
 
     // Update state
-    sprint.withdrawn_amount = sprint.withdrawn_amount.checked_add(withdrawable).ok_or(SprintVaultError::MathOverflow)?;
-    sprint.last_operation_slot = Clock::get()?.slot;
+    let sprint = &mut ctx.accounts.sprint;
+    sprint.withdrawn_amount = sprint.withdrawn_amount
+        .checked_add(withdrawable)
+        .ok_or(SprintVaultError::MathOverflow)?;
+    sprint.last_operation_slot = current_slot;
 
     Ok(())
 }

@@ -1,0 +1,12 @@
+[build]
+target = "sbf-solana-solana"
+
+[target.sbf-solana-solana]
+rustflags = [
+    "-C", "link-arg=--stack-size=32768",  # Increase stack size
+    "-C", "link-arg=--heap-size=327680",  # Increase heap size
+]
+
+# Set the BPF SDK environment
+[env]
+BPF_SDK_PATH = "/Users/aquental/.local/share/solana/install/releases/stable-056661ba79e87ae60f559a3e0b1c40e250f1f622/solana-release/bin/sdk/sbf"

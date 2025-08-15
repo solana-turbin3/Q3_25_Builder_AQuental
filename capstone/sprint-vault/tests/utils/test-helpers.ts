@@ -19,22 +19,47 @@ export const MINIMUM_WITHDRAWAL = ONE_USDC.mul(new BN(10)); // 10 USDC minimum
 
 // Sprint Duration enum values (matching Anchor-generated TypeScript types)
 export const SprintDuration = {
-  OneWeek: { oneWeek: {} },
-  TwoWeeks: { twoWeeks: {} },
-  ThreeWeeks: { threeWeeks: {} },
-  FourWeeks: { fourWeeks: {} },
-  SixWeeks: { sixWeeks: {} },
-  EightWeeks: { eightWeeks: {} },
-  TenWeeks: { tenWeeks: {} },
-  TwelveWeeks: { twelveWeeks: {} },
+  OneWeek: 0,
+  TwoWeeks: 1,
+  ThreeWeeks: 2,
+  FourWeeks: 3,
+  SixWeeks: 4,
+  EightWeeks: 5,
+  TenWeeks: 6,
+  TwelveWeeks: 7,
 };
+
+// Helper to convert duration enum to object for Anchor
+export function toDurationObject(duration: number): any {
+  const variants = [
+    { oneWeek: {} },
+    { twoWeeks: {} },
+    { threeWeeks: {} },
+    { fourWeeks: {} },
+    { sixWeeks: {} },
+    { eightWeeks: {} },
+    { tenWeeks: {} },
+    { twelveWeeks: {} },
+  ];
+  return variants[duration];
+}
 
 // Acceleration Type enum values (matching Anchor-generated TypeScript types)
 export const AccelerationType = {
-  Linear: { linear: {} },
-  Quadratic: { quadratic: {} },
-  Cubic: { cubic: {} },
+  Linear: 0,
+  Quadratic: 1,
+  Cubic: 2,
 };
+
+// Helper to convert acceleration type enum to object for Anchor
+export function toAccelerationObject(accel: number): any {
+  const variants = [
+    { linear: {} },
+    { quadratic: {} },
+    { cubic: {} },
+  ];
+  return variants[accel];
+}
 
 // Helper to convert duration to seconds
 export function durationToSeconds(duration: any): number {
@@ -154,13 +179,17 @@ export async function createSprint(
 
   const startTime = Math.floor(Date.now() / 1000) + 60; // Start in 1 minute
 
+  // Convert enum values to objects if they're numbers
+  const durationObj = typeof duration === 'number' ? toDurationObject(duration) : duration;
+  const accelerationObj = typeof accelerationType === 'number' ? toAccelerationObject(accelerationType) : accelerationType;
+
   await program.methods
     .createSprint(
       sprintId,
       new BN(startTime),
-      duration,
+      durationObj,
       amount,
-      accelerationType
+      accelerationObj
     )
     .accounts({
       sprint,

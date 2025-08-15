@@ -95,7 +95,7 @@ pub fn handler(
         },
         ReleaseSchedule::Milestone { conditions } => {
             let mut total_milestone_amount = 0u64;
-            for condition in conditions {
+            for condition in conditions.iter() {
                 total_milestone_amount = total_milestone_amount
                     .checked_add(condition.amount)
                     .ok_or(VaultError::ArithmeticOverflow)?;
@@ -123,7 +123,7 @@ pub fn handler(
             
             // Validate milestone config
             let mut total_milestone_amount = 0u64;
-            for condition in milestone_config {
+            for condition in milestone_config.iter() {
                 total_milestone_amount = total_milestone_amount
                     .checked_add(condition.amount)
                     .ok_or(VaultError::ArithmeticOverflow)?;
