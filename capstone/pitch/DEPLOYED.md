@@ -23,6 +23,6 @@
 ## Deployment Info
 
 - **Network**: Solana Devnet
-- **RPC Endpoint**: QuickNode Custom Endpoint
+- **RPC Endpoint**: [QuickNode](https://polished-warmhearted-frog.solana-devnet.quiknode.pro/9bc0c3437243817577c59c3690d3bcde03fe8b6f) Custom Endpoint
 - **Deployment Date**: 2025-08-16
 - **Deployed By**: `Dn2ucNUVe5ptVueYRKf6m6effxs13RJpjJEMfEL9yMzG`

@@ -27,7 +27,7 @@ vault = "GfmSufzcHac1goiTuS1WaxQkVD2FfTqdD5B8sL6Mc1jt"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "~/.config/solana/turbin3-wallet.json"
 
 [scripts]
