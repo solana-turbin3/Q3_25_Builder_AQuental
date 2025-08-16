@@ -1,0 +1,219 @@
+import * as anchor from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
+import { SprintVault } from "../target/types/sprint_vault";
+import { expect } from "chai";
+import {
+  Keypair,
+  SystemProgram,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  Transaction,
+  sendAndConfirmTransaction
+} from "@solana/web3.js";
+import {
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  createMint,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+  getAccount
+} from "@solana/spl-token";
+import BN from "bn.js";
+
+describe("sprint-vault-simple", () => {
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
+
+  const program = anchor.workspace.SprintVault as Program<SprintVault>;
+  console.log("Program ID from workspace:", program.programId.toString());
+  
+  let employer: Keypair;
+  let freelancer: Keypair;
+  let mint: PublicKey;
+  let employerTokenAccount: PublicKey;
+  let freelancerTokenAccount: PublicKey;
+
+  before(async () => {
+    employer = Keypair.generate();
+    freelancer = Keypair.generate();
+    
+    const wallet = provider.wallet as anchor.Wallet;
+
+    // Transfer SOL from provider wallet to test accounts
+    const transferTx = new Transaction();
+    transferTx.add(
+      SystemProgram.transfer({
+        fromPubkey: wallet.publicKey,
+        toPubkey: employer.publicKey,
+        lamports: 0.1 * LAMPORTS_PER_SOL,
+      }),
+      SystemProgram.transfer({
+        fromPubkey: wallet.publicKey,
+        toPubkey: freelancer.publicKey,
+        lamports: 0.1 * LAMPORTS_PER_SOL,
+      })
+    );
+    
+    await sendAndConfirmTransaction(
+      provider.connection,
+      transferTx,
+      [wallet.payer]
+    );
+
+    console.log("Funded employer:", employer.publicKey.toString());
+    console.log("Funded freelancer:", freelancer.publicKey.toString());
+
+    // Create mint
+    mint = await createMint(
+      provider.connection,
+      employer,
+      employer.publicKey,
+      null,
+      6
+    );
+    
+    console.log("Created mint:", mint.toString());
+
+    // Create token accounts
+    const employerATA = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      employer,
+      mint,
+      employer.publicKey
+    );
+    employerTokenAccount = employerATA.address;
+
+    const freelancerATA = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      employer,
+      mint,
+      freelancer.publicKey
+    );
+    freelancerTokenAccount = freelancerATA.address;
+
+    // Mint tokens to employer
+    await mintTo(
+      provider.connection,
+      employer,
+      mint,
+      employerTokenAccount,
+      employer,
+      1000000000 // 1000 tokens with 6 decimals
+    );
+    
+    console.log("Minted tokens to employer");
+  });
+
+  describe("Sprint Creation", () => {
+    it("Creates a sprint successfully", async () => {
+      const sprintId = new BN(1);
+      const startTime = new BN(Math.floor(Date.now() / 1000) + 10); // Start in 10 seconds
+      const totalAmount = new BN(100000000); // 100 tokens
+      
+      // Calculate PDAs
+      const [sprintPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("sprint"),
+          employer.publicKey.toBuffer(),
+          sprintId.toArrayLike(Buffer, "le", 8)
+        ],
+        program.programId
+      );
+
+      const [vaultPda] = PublicKey.findProgramAddressSync(
+        [
+          sprintPda.toBuffer(),
+          TOKEN_PROGRAM_ID.toBuffer(),
+          mint.toBuffer()
+        ],
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+
+      console.log("Sprint PDA:", sprintPda.toString());
+      console.log("Vault PDA:", vaultPda.toString());
+
+      // Create sprint
+      const tx = await program.methods
+        .createSprint(
+          sprintId,
+          startTime,
+          { twoWeeks: {} }, // SprintDuration enum
+          totalAmount,
+          { quadratic: {} } // AccelerationType enum (optional)
+        )
+        .accounts({
+          sprint: sprintPda,
+          vault: vaultPda,
+          employer: employer.publicKey,
+          freelancer: freelancer.publicKey,
+          mint: mint,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        })
+        .signers([employer])
+        .rpc();
+      
+      console.log("Sprint created. Transaction:", tx);
+
+      // Verify sprint was created
+      const sprintAccount = await program.account.sprint.fetch(sprintPda);
+      expect(sprintAccount.sprintId.toString()).to.equal(sprintId.toString());
+      expect(sprintAccount.employer.toString()).to.equal(employer.publicKey.toString());
+      expect(sprintAccount.freelancer.toString()).to.equal(freelancer.publicKey.toString());
+      expect(sprintAccount.totalAmount.toString()).to.equal(totalAmount.toString());
+      expect(sprintAccount.isFunded).to.be.false;
+      
+      console.log("✅ Sprint created successfully!");
+    });
+
+    it("Funds a sprint", async () => {
+      const sprintId = new BN(1);
+      const amount = new BN(100000000); // 100 tokens
+      
+      // Calculate PDAs
+      const [sprintPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("sprint"),
+          employer.publicKey.toBuffer(),
+          sprintId.toArrayLike(Buffer, "le", 8)
+        ],
+        program.programId
+      );
+
+      const [vaultPda] = PublicKey.findProgramAddressSync(
+        [
+          sprintPda.toBuffer(),
+          TOKEN_PROGRAM_ID.toBuffer(),
+          mint.toBuffer()
+        ],
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+
+      // Fund the sprint
+      const tx = await program.methods
+        .depositToEscrow(amount)
+        .accounts({
+          sprint: sprintPda,
+          vault: vaultPda,
+          employerTokenAccount: employerTokenAccount,
+          employer: employer.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([employer])
+        .rpc();
+      
+      console.log("Sprint funded. Transaction:", tx);
+
+      // Verify sprint is funded
+      const sprintAccount = await program.account.sprint.fetch(sprintPda);
+      expect(sprintAccount.isFunded).to.be.true;
+
+      // Verify vault has tokens
+      const vaultAccount = await getAccount(provider.connection, vaultPda);
+      expect(vaultAccount.amount.toString()).to.equal(amount.toString());
+      
+      console.log("✅ Sprint funded successfully!");
+    });
+  });
+});

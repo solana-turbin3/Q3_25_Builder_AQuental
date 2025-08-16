@@ -11,7 +11,7 @@ use instructions::*;
 use state::SprintDuration;
 use strategies::AccelerationType;
 
-declare_id!("2XMnUCRiLzaqt3Egt9mfUUo3T9bs6BBnrcE6AQavpx1f");
+declare_id!("9hP7zfPfFqF6YH97yVpVV57PUmRkbxJ8eUwZf1rrHP23");
 
 #[program]
 pub mod sprint_vault {

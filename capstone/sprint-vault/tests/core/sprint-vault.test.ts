@@ -36,10 +36,10 @@ describe("sprint-vault", () => {
 
     // Fund the accounts
     await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(employer.publicKey, 2 * LAMPORTS_PER_SOL)
+      await provider.connection.requestAirdrop(employer.publicKey, 0.5 * LAMPORTS_PER_SOL)
     );
     await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(freelancer.publicKey, LAMPORTS_PER_SOL)
+      await provider.connection.requestAirdrop(freelancer.publicKey, 0.5 * LAMPORTS_PER_SOL)
     );
 
     // Create mint
@@ -81,8 +81,8 @@ describe("sprint-vault", () => {
 
   describe("Sprint Creation", () => {
     it("Creates a sprint successfully", async () => {
-      const sprintId = new BN(1);
-      const startTime = new BN(Math.floor(Date.now() / 1000) + 10); // Start in 10 seconds
+      const sprintId = new BN(Date.now()); // Use timestamp for unique ID
+      const startTime = new BN(Math.floor(Date.now() / 1000) - 1); // Start immediately (1 second ago)
       const totalAmount = new BN(100000000); // 100 tokens
       
       // Calculate PDAs
@@ -136,8 +136,9 @@ describe("sprint-vault", () => {
     });
 
     it("Funds a sprint", async () => {
-      const sprintId = new BN(1);
+      const sprintId = new BN(Date.now() + 1); // Unique ID
       const amount = new BN(100000000); // 100 tokens
+      const startTime = new BN(Math.floor(Date.now() / 1000) + 10); // Start in future so we can fund it
       
       // Calculate PDAs
       const [sprintPda] = PublicKey.findProgramAddressSync(
@@ -158,7 +159,29 @@ describe("sprint-vault", () => {
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
-      // Fund the sprint
+      // First create the sprint
+      await program.methods
+        .createSprint(
+          sprintId,
+          startTime,
+          { twoWeeks: {} },
+          amount,
+          { quadratic: {} }
+        )
+        .accounts({
+          sprint: sprintPda,
+          vault: vaultPda,
+          employer: employer.publicKey,
+          freelancer: freelancer.publicKey,
+          mint: mint,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        })
+        .signers([employer])
+        .rpc();
+
+      // Then fund the sprint
       await program.methods
         .depositToEscrow(amount)
         .accounts({
@@ -181,7 +204,9 @@ describe("sprint-vault", () => {
     });
 
     it("Withdraws streamed payment", async () => {
-      const sprintId = new BN(1);
+      const sprintId = new BN(Date.now() + 2); // Unique ID
+      const amount = new BN(100000000); // 100 tokens
+      const startTime = new BN(Math.floor(Date.now() / 1000) + 10); // Start 10 seconds in future to allow funding
       
       // Calculate PDAs
       const [sprintPda] = PublicKey.findProgramAddressSync(
@@ -202,8 +227,43 @@ describe("sprint-vault", () => {
         ASSOCIATED_TOKEN_PROGRAM_ID
       );
 
-      // Wait a bit to accumulate some withdrawable amount
-      await new Promise(resolve => setTimeout(resolve, 12000));
+      // Create sprint with a short duration for testing (oneWeek instead of twoWeeks)
+      await program.methods
+        .createSprint(
+          sprintId,
+          startTime,
+          { oneWeek: {} }, // Using shorter duration for faster testing
+          amount,
+          { linear: {} } // Using linear acceleration for more predictable testing
+        )
+        .accounts({
+          sprint: sprintPda,
+          vault: vaultPda,
+          employer: employer.publicKey,
+          freelancer: freelancer.publicKey,
+          mint: mint,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        })
+        .signers([employer])
+        .rpc();
+
+      // Fund the sprint
+      await program.methods
+        .depositToEscrow(amount)
+        .accounts({
+          sprint: sprintPda,
+          vault: vaultPda,
+          employerTokenAccount: employerTokenAccount,
+          employer: employer.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([employer])
+        .rpc();
+
+      // Wait for sprint to start and accumulate some withdrawable amount
+      await new Promise(resolve => setTimeout(resolve, 15000)); // Wait 15 seconds (10s for sprint to start + 5s to accumulate funds)
 
       // Get initial balance
       const initialBalance = await getAccount(provider.connection, freelancerTokenAccount);
@@ -233,8 +293,70 @@ describe("sprint-vault", () => {
   });
 
   describe("Sprint Controls", () => {
+    let controlSprintId: BN;
+    
+    before(async () => {
+      // Create and fund a sprint for control tests
+      controlSprintId = new BN(Date.now() + 1000);
+      const startTime = new BN(Math.floor(Date.now() / 1000) + 10); // Start in future to allow funding
+      const totalAmount = new BN(100000000);
+      
+      const [sprintPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("sprint"),
+          employer.publicKey.toBuffer(),
+          controlSprintId.toArrayLike(Buffer, "le", 8)
+        ],
+        program.programId
+      );
+
+      const [vaultPda] = PublicKey.findProgramAddressSync(
+        [
+          sprintPda.toBuffer(),
+          TOKEN_PROGRAM_ID.toBuffer(),
+          mint.toBuffer()
+        ],
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+
+      // Create sprint
+      await program.methods
+        .createSprint(
+          controlSprintId,
+          startTime,
+          { twoWeeks: {} },
+          totalAmount,
+          { quadratic: {} }
+        )
+        .accounts({
+          sprint: sprintPda,
+          vault: vaultPda,
+          employer: employer.publicKey,
+          freelancer: freelancer.publicKey,
+          mint: mint,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        })
+        .signers([employer])
+        .rpc();
+
+      // Fund the sprint
+      await program.methods
+        .depositToEscrow(totalAmount)
+        .accounts({
+          sprint: sprintPda,
+          vault: vaultPda,
+          employerTokenAccount: employerTokenAccount,
+          employer: employer.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([employer])
+        .rpc();
+    });
+    
     it("Pauses a sprint", async () => {
-      const sprintId = new BN(1);
+      const sprintId = controlSprintId;
       
       const [sprintPda] = PublicKey.findProgramAddressSync(
         [
@@ -259,7 +381,8 @@ describe("sprint-vault", () => {
     });
 
     it("Resumes a sprint", async () => {
-      const sprintId = new BN(1);
+      // Use a new sprint ID for this test to avoid conflicts
+      const sprintId = new BN(Date.now() + 2000);
       
       const [sprintPda] = PublicKey.findProgramAddressSync(
         [
@@ -270,6 +393,68 @@ describe("sprint-vault", () => {
         program.programId
       );
 
+      // First create and fund the sprint for this test
+      const startTime = new BN(Math.floor(Date.now() / 1000) + 5); // Start in 5 seconds to allow funding
+      const totalAmount = new BN(100000000);
+      
+      const [vaultPda] = PublicKey.findProgramAddressSync(
+        [
+          sprintPda.toBuffer(),
+          TOKEN_PROGRAM_ID.toBuffer(),
+          mint.toBuffer()
+        ],
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+      
+      // Create sprint
+      await program.methods
+        .createSprint(
+          sprintId,
+          startTime,
+          { twoWeeks: {} },
+          totalAmount,
+          { quadratic: {} }
+        )
+        .accounts({
+          sprint: sprintPda,
+          vault: vaultPda,
+          employer: employer.publicKey,
+          freelancer: freelancer.publicKey,
+          mint: mint,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        })
+        .signers([employer])
+        .rpc();
+      
+      // Fund the sprint
+      await program.methods
+        .depositToEscrow(totalAmount)
+        .accounts({
+          sprint: sprintPda,
+          vault: vaultPda,
+          employerTokenAccount: employerTokenAccount,
+          employer: employer.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([employer])
+        .rpc();
+      
+      // Pause it first
+      await program.methods
+        .pauseStream()
+        .accounts({
+          sprint: sprintPda,
+          employer: employer.publicKey,
+        })
+        .signers([employer])
+        .rpc();
+      
+      // Wait a bit to ensure we're in a different slot
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Now resume it
       await program.methods
         .resumeStream()
         .accounts({

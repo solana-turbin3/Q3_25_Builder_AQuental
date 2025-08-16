@@ -14,9 +14,9 @@ members = ["programs/*"]
 skip-lint = false
 
 [programs.localnet]
-bounty = "8qvnjVHuK27Wbzhe5HCuXybDLRN41t5LAZ9BgNKpiymh"
-sprint_vault = "2XMnUCRiLzaqt3Egt9mfUUo3T9bs6BBnrcE6AQavpx1f"
-vault = "5Q5YAzz8Hb2F37qQ3ztmyhEqCQyRswUagUPYJK6bWP4y"
+bounty = "3g2zA2ASL7dovWSoDgRwY2B6LVgFiE3JD8TYcTodbTqc"
+sprint_vault = "9hP7zfPfFqF6YH97yVpVV57PUmRkbxJ8eUwZf1rrHP23"
+vault = "WLEzoVWpPSmm9KmTatnby8nerq94MKnQbJmVcufifMK"
 
 [programs.devnet]
 bounty = "EeVnFRVgane4uJQu97yTe3YujwweCLW3ChAT6VStj4HL"
@@ -27,7 +27,7 @@ vault = "9JoLiDYTVqJ9i1tHxfKQkaFLD6prk9PMUHTAVF2S9WE5"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "~/.config/solana/turbin3-wallet.json"
 
 [scripts]

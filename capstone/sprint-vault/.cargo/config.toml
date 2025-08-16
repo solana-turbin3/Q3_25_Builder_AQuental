@@ -1,25 +1,29 @@
 [target.bpfel-unknown-unknown]
 rustflags = [
-    "-C", "link-arg=-zstack-size=8192",
-    "-C", "opt-level=2",
+    "-C", "link-arg=-zstack-size=16384",
+    "-C", "opt-level=3",
     "-C", "overflow-checks=false",
-    "-C", "inline-threshold=5"
+    "-C", "inline-threshold=5",
+    "-C", "target-cpu=generic",
+    "-C", "no-vectorize-loops"
 ]
 
 [target.sbf-solana-solana]
 rustflags = [
-    "-C", "link-arg=-zstack-size=8192",
-    "-C", "opt-level=2",
+    "-C", "link-arg=-zstack-size=16384",
+    "-C", "opt-level=3",
     "-C", "overflow-checks=false",
-    "-C", "inline-threshold=5"
+    "-C", "inline-threshold=5",
+    "-C", "target-cpu=generic",
+    "-C", "no-vectorize-loops"
 ]
 
 [profile.release]
-opt-level = 2
+opt-level = "z"
 overflow-checks = false
 lto = "fat"
 codegen-units = 1
 
 [profile.release.package."*"]
-opt-level = 2
+opt-level = "z"
 overflow-checks = false

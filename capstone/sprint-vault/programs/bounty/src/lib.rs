@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 use errors::*;
 use instructions::*;
 
-declare_id!("8qvnjVHuK27Wbzhe5HCuXybDLRN41t5LAZ9BgNKpiymh");
+declare_id!("3g2zA2ASL7dovWSoDgRwY2B6LVgFiE3JD8TYcTodbTqc");
 
 #[program]
 pub mod bounty {
