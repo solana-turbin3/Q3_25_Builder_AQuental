@@ -5,7 +5,7 @@ use crate::state::*;
 use crate::errors::BountyError;
 
 // Import Vault program types
-use vault::state::{ReleaseSchedule, ReleaseAuthority, MilestoneCondition as VaultMilestone};
+use vault::state::{ReleaseSchedule, ReleaseAuthority, MilestoneCondition, MilestoneSet};
 use vault::cpi::accounts::CreateEscrow;
 use vault::program::Vault;
 
@@ -150,17 +150,19 @@ pub fn handler(
     vault_config.bump = ctx.bumps.vault_config;
     
     // Create milestone-based release schedule for Vault
-    let vault_milestones: Vec<VaultMilestone> = milestones.iter().enumerate().map(|(i, m)| {
-        VaultMilestone {
+    let mut milestone_set = MilestoneSet::new();
+    for (i, m) in milestones.iter().enumerate().take(5) {  // MilestoneSet supports max 5 milestones
+        let condition = MilestoneCondition {
             milestone_id: i as u32,
             amount: m.amount,
             required_approval: bounty_pool.key(),
             is_completed: false,
-        }
-    }).collect();
+        };
+        milestone_set.add(condition)?;
+    }
     
     let release_schedule = ReleaseSchedule::Milestone {
-        conditions: Box::new(vault_milestones),
+        conditions: milestone_set,
     };
     
     // CPI to Vault program to create escrow

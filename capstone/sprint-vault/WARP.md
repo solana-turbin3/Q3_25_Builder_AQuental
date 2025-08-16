@@ -7,7 +7,10 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 ### Building
 ```bash
 # Build all Anchor programs (sprint-vault, bounty, vault)
-anchor build
+anchor build --no-idl  # Use --no-idl to avoid sbf-solana-solana target errors
+
+# Or use npm script which includes the flag
+npm run build
 
 # Clean build artifacts
 anchor clean
@@ -27,13 +30,9 @@ anchor test --skip-build
 # Run specific test suites
 npm run test:unit       # Unit tests for sprint-vault
 npm run test:integration # Integration tests
+npm run test:edge      # Edge case tests
+npm run test:directives # Directive compliance tests
 npm run test:all        # All test files
-
-# Run improved test suite with validation
-./run-improved-tests.sh
-
-# Generate test summary report
-./run-test-summary.sh
 ```
 
 ### Deployment

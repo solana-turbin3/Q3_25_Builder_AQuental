@@ -11,7 +11,6 @@ The protocol is composed of three main on-chain programs and an external oracle 
 1. **SprintVault Program**: The core program responsible for creating and managing payment sprints, handling escrow deposits, and streaming payments to freelancers.
 2. **Bounty Program**: Manages payments for open-source contributions, linking them to specific deliverables like GitHub Pull Requests.
 3. **Dispute Program**: A specialized program to handle payment pauses and dispute resolution, acting as an arbitration layer.
-4. **Oracle (GitHub Webhook)**: An external component that provides off-chain data (e.g., PR merge events) to trigger on-chain actions in the Bounty Program.
 
 ### 1.1 SprintVault Program
 

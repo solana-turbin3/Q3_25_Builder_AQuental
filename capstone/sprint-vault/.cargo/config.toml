@@ -1,12 +1,25 @@
-[build]
-target = "sbf-solana-solana"
+[target.bpfel-unknown-unknown]
+rustflags = [
+    "-C", "link-arg=-zstack-size=8192",
+    "-C", "opt-level=2",
+    "-C", "overflow-checks=false",
+    "-C", "inline-threshold=5"
+]
 
 [target.sbf-solana-solana]
 rustflags = [
-    "-C", "link-arg=--stack-size=32768",  # Increase stack size
-    "-C", "link-arg=--heap-size=327680",  # Increase heap size
+    "-C", "link-arg=-zstack-size=8192",
+    "-C", "opt-level=2",
+    "-C", "overflow-checks=false",
+    "-C", "inline-threshold=5"
 ]
 
-# Set the BPF SDK environment
-[env]
-BPF_SDK_PATH = "/Users/aquental/.local/share/solana/install/releases/stable-056661ba79e87ae60f559a3e0b1c40e250f1f622/solana-release/bin/sdk/sbf"
+[profile.release]
+opt-level = 2
+overflow-checks = false
+lto = "fat"
+codegen-units = 1
+
+[profile.release.package."*"]
+opt-level = 2
+overflow-checks = false
