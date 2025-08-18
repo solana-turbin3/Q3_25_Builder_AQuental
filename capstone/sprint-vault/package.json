@@ -15,7 +15,7 @@
     "clean": "anchor clean"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.31.1"
+    "@coral-xyz/anchor": "0.31.1"
   },
   "devDependencies": {
     "@solana/spl-token": "^0.4.13",

@@ -100,6 +100,13 @@ export async function setupMintAndTokenAccounts(
   treasuryTokenAccount: PublicKey;
   userTokenAccount: PublicKey;
 }> {
+  // Fund mint authority with SOL for transaction fees
+  const mintAuthorityAirdrop = await provider.connection.requestAirdrop(
+    mintAuthority.publicKey,
+    2 * LAMPORTS_PER_SOL
+  );
+  await provider.connection.confirmTransaction(mintAuthorityAirdrop);
+
   // Create mint
   const mint = await createMint(
     provider.connection,
@@ -214,6 +221,20 @@ export async function setupBasicTest(): Promise<TestAccountSetup> {
   const program = anchor.workspace.SprintVault as Program<SprintVault>;
   const sprintAccountKeypair = anchor.web3.Keypair.generate();
   
+  // Fund the provider wallet with SOL if needed
+  try {
+    const balance = await provider.connection.getBalance(provider.wallet.publicKey);
+    if (balance < LAMPORTS_PER_SOL) {
+      const airdrop = await provider.connection.requestAirdrop(
+        provider.wallet.publicKey,
+        2 * LAMPORTS_PER_SOL
+      );
+      await provider.connection.confirmTransaction(airdrop);
+    }
+  } catch (error) {
+    console.log("Airdrop failed, assuming wallet is already funded");
+  }
+  
   // Derive PDAs
   const [vaultStatePda] = deriveVaultStatePda(program.programId, sprintAccountKeypair.publicKey);
   const [vaultAuthorityPda] = deriveVaultAuthorityPda(program.programId, vaultStatePda);
@@ -245,6 +266,13 @@ export async function setupBasicTest(): Promise<TestAccountSetup> {
 export async function setupTestWithSecondUser(): Promise<TestAccountSetup> {
   const baseSetup = await setupBasicTest();
   const mintAuthority = Keypair.generate();
+  
+  // Fund mint authority
+  const airdrop = await baseSetup.provider.connection.requestAirdrop(
+    mintAuthority.publicKey,
+    2 * LAMPORTS_PER_SOL
+  );
+  await baseSetup.provider.connection.confirmTransaction(airdrop);
   
   const { userWallet, userTokenAccount, memberPda } = await createAdditionalUserWithTokens(
     baseSetup.provider,
@@ -511,6 +539,13 @@ export async function addMultipleMembers(
 ): Promise<Array<{ wallet: Keypair; memberPda: PublicKey; tokenAccount: PublicKey }>> {
   const members = [];
   const mintAuthority = Keypair.generate();
+  
+  // Fund mint authority once for all members
+  const airdrop = await context.provider.connection.requestAirdrop(
+    mintAuthority.publicKey,
+    2 * LAMPORTS_PER_SOL
+  );
+  await context.provider.connection.confirmTransaction(airdrop);
   
   for (let i = 0; i < count; i++) {
     const { userWallet, userTokenAccount, memberPda } = await createAdditionalUserWithTokens(
